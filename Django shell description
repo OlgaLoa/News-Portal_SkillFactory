@@ -1,0 +1,200 @@
+Django shell к News Portal
+python3 manage.py shell переход в консоль shell (запуск из той дирекции, где manage.py)
+from newapp.models import * импортировать все модели приложения
+
+1.Создать двух пользователей (с помощью метода User.objects.create_user('username')).
+>>> u1 = User.objects.create_user(username = 'Harry')  #создали 1-го пользователя (объект) встроенной модели User с обязательным полем username
+>>> u1
+<User: Harry>
+
+>>> u2 = User.objects.create_user(username = 'Ron')
+>>> u2
+<User: Ron>
+
+2.Создать два объекта модели Author, связанные с пользователями.
+>>> Author.objects.create(authorUser = u1) # создали 1-го автора (объект) модели Author с обязательным полем authorUser (ratingAuthor по умолчанию = 0 поэтому это необяз-ное поле)
+<Author: Author object (1)>
+
+>>> Author.objects.create(authorUser = u2) #создали 2-го автора (объект) модели Author с обязательным полем authorUser (ratingAuthor по умолчанию = 0 поэтому это необяз-ное поле)
+<Author: Author object (2)>
+
+
+
+
+
+
+3.Добавить 4 категории в модель Category.
+>>> Category.objects.create(name = 'IT') #создали уникальную категорию (unique = True) IT с обязательным значением поля name
+<Category: Category object (1)>
+
+>>> Category.objects.create(name = 'Economics')
+<Category: Category object (2)>
+
+>>> Category.objects.create(name = 'Advertising')
+<Category: Category object (3)>
+
+>>> Category.objects.create(name = 'Business')
+<Category: Category object (4)>
+
+4.Добавить 2 статьи и 1 новость.
+>>> author = Author.objects.get(id = 1)  # создали переменную автора по id, тк в модели Post author имеет связь один ко многим к модели Author
+>>> author
+<Author: Author object (1)>
+>>> Post.objects.create(author = author, categoryType = 'AR', title = 'ecology', text = 'Ecology is a  branch of science, including human science, population, community, ecosystem and biosphere.')  # создали статью (в author записали переменную author, создвнную выше, rating - дефолтное значение)(postCategory имеет связь ManyToMany с Category поэтому будет добавлена позже)
+<Post: Post object (1)>
+
+>>> author2 = Author.objects.get(id=2)
+>>> author2 
+<Author: Author object (2)>
+>>> Post.objects.create(author = author2, categoryType = 'AR', title = 'Biology', text = 'Biology is defined as the study of living organisms, their origins, anatomy, morphology, physiology, behaviour, and distribution.')
+<Post: Post object (2)>
+
+>>> Post.objects.create(author = author2, categoryType = 'NW', title = 'Finance', text = 'Finance is a term for matters regarding the management, creation, and study of money and investments.')
+<Post: Post object (3)>
+
+>>> Post.objects.get(id=1).title #  проверка
+'ecology'
+>>> Post.objects.get(id=1).text  #  проверка
+'Ecology is a  branch of science, including human science, population, community, ecosystem and biosphere.'
+
+5.Присвоить им категории (как минимум в одной статье/новости должно быть не меньше 2 категорий).
+
+postCategory имеет связь ManyToMany с Category 
+
+Post.objects.get(id = 1).postCategory.add(Category.objects.get(id=4)) # получили post под id=1 , обратились к его полю postCategory, методом add добавили к нему категорию с id =1) к Post ecology добавили Category Business
+
+Post.objects.get(id = 2).postCategory.add(Category.objects.get(id=3))  # к Post Biology добавили Category Advertising
+
+
+Post.objects.get(id = 3).postCategory.add(Category.objects.get(id=2)) -  # к Post Finance добавили Category Economics
+
+Post.objects.get(id = 3).postCategory.add(Category.objects.get(id=4))  # к Post Finance добавили Category Finance
+
+ Post.objects.get(id = 3).postCategory.add(Category.objects.get(id=3))  # к Post Finance добавили Category Advertising
+
+Post.objects.get(id = 3).postCategory.add(Category.objects.get(id=1))  # к Post Finance добавили Category IT
+
+
+
+
+
+
+
+
+
+
+
+6.Создать как минимум 4 комментария к разным объектам модели Post (в каждом объекте должен быть как минимум один комментарий).
+
+>>> Comment.objects.create(commentPost = Post.objects.get(id =1), commentUser = Author.objects.get(id = 1).authorUser, text = 'its really interesting') # создали комментарий к посту ecology под author1
+
+# связали commentPost  с  Post , commentUser (получили объект User) = (Author.objects.get(id = 1)(получили объект authorUser модели Author по id = 1) ).authorUser(обратились к полю authorUser и получили значение этого поля)
+<Comment: Comment object (1)>
+
+Comment.objects.create(commentPost = Post.objects.get(id = 2), commentUser = Author.objects.get(id = 2).authorUser, text = 'Biology is important science') # создали комментарий к посту Biology под author2
+
+>>> Comment.objects.create(commentPost = Post.objects.get(id = 3), commentUser = Author.objects.get(id = 2).authorUser, text = 'Finance is important science')
+<Comment: Comment object (3)> # создали комментарий к посту Finance под author2
+
+
+>>> Comment.objects.create(commentPost = Post.objects.get(id =1), commentUser = Author.objects.get(id = 1).authorUser, text = 'Ecologie is important science')
+<Comment: Comment object (4)>  # создали комментарий к посту ecology под author1
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+7.Применяя функции like() и dislike() к статьям/новостям и комментариям, скорректировать рейтинги этих объектов.
+>>> Comment.objects.get(id=1).like() #like к комментарию под id = 1 (its really interesting)
+>>> Comment.objects.get(id=1).like() # like к комментарию под id = 1 (its really interesting)
+>>> Comment.objects.get(id=1).like() # like к комментарию под id = 1 (its really interesting)
+>>> Comment.objects.get(id=1).rating #получаем значение rating у комментария под id =1 (its really interesting)
+3
+>>> Comment.objects.get(id=2).dislike() # dislike к комментарию под id = 2 'Biology is important science')
+>>> Comment.objects.get(id=2).rating #получаем значение rating у комментария под id = 2 'Biology is important science')
+-1
+>>> Comment.objects.get(id=3).like() #like к комментарию под id = 3 'Finance is important science')
+>>> Comment.objects.get(id=3).rating
+1
+>>> Comment.objects.get(id=4).like() #like к комментарию под id = 4 'Ecologie is important science')
+>>> Comment.objects.get(id=4).rating
+1
+Post.objects.get(id=1).like() #like к посту под id = 1 (ecology)
+Post.objects.get(id=2).like() #like к посту под id = 2 (Biology)
+Post.objects.get(id=3).like() #like к посту под id = 3 (Finance)
+Post.objects.get(id=3).like() #like к посту под id = 3 (Finance)
+
+
+
+
+8.Обновить рейтинги пользователей.
+>>> a1 = Author.objects.get(id=1) #получили пользователя a1 модели Author по id=1
+>>> a1.update_rating() - #обновили рейтинг пользователя a1 модели Author по id=1
+>>> a1.ratingAuthor - #вывели рейтинг пользователя a1 модели Author по id=1
+7
+>>> a2 =Author.objects.get(id=2)
+>>> a2.update_rating()
+>>> a2.ratingAuthor
+6
+
+9.Вывести username и рейтинг лучшего пользователя (применяя сортировку и возвращая поля первого объекта).
+>>> a = Author.objects.order_by('-ratingAuthor')[:1] #срез 1-го элемента списка по  ratingAuthor по убыванию
+>>> a
+<QuerySet [<Author: Author object (1)>]> #получили, что объект  Author c id=1 имеет самый большой рейтинг
+>>> Author.objects.get(id=1).authorUser #получить имя лучшего пользователя
+<User: Harry> 
+>>> Author.objects.get(id=1).ratingAuthor получили значение самого высого рейтинга
+7
+
+10.Вывести дату добавления, username автора, рейтинг, заголовок и превью лучшей статьи, основываясь на лайках/дислайках к этой статье.
+ p = Post.objects.order_by('-rating')[:1] #срез 1-го элемента списка по  rating по убыванию
+>>> p
+<QuerySet [<Post: Post object (3)>]>  #самый большой rating у поста под id=3
+>>> Post.objects.get(id=3).dateCreation #дата добавления
+datetime.datetime(2023, 12, 24, 10, 21, 33, 631446, tzinfo=datetime.timezone.utc)
+Post.objects.get(id=3).author  #обратились к author поста под id=3
+<Author: Author object (2)>
+ Author.objects.get(id=2).authorUser #обратились к username author поста под id=2
+<User: Ron> username автора
+>>> Post.objects.get(id=3).rating #рейтинг
+2
+>>> Post.objects.get(id=3).title #заголовок
+'Finance'
+>>> Post.objects.get(id=3).preview() #превью
+'Finance is a term for matters regarding the management, creation, and study of money and investments....'
+
+11.Вывести все комментарии (дата, пользователь, рейтинг, текст) к этой статье.
+>>> Comment.objects.get( commentPost=Post.objects.get(id =3)).dateCreation #дата
+
+datetime.datetime(2023, 12, 24, 12, 21, 10, 327622, tzinfo=datetime.timezone.utc)
+
+
+>>> Comment.objects.get( commentPost=Post.objects.get(id =3)).commentUser_id  #пользователь
+2
+>>> User.objects.get(id=2) #имя
+<User: Ron>
+
+
+>>> Comment.objects.get( commentPost=Post.objects.get(id =3)).rating #рейтинг
+1
+
+
+
+>>> Comment.objects.get( commentPost=Post.objects.get(id =3)).text #текст
+
+'Finance is important science'
+
+
+
+
